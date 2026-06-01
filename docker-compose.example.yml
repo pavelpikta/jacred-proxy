@@ -16,6 +16,7 @@ services:
       JACRED_MERGE_V1: "true"
       JACRED_STRIP_YEAR: "false"
       JACRED_ENRICH_TITLES: "true"
+      # JACRED_SKIP_CAT_FILTER: "true"  # Torznab: ignore client cat= post-filter
       LOG_LEVEL: "INFO"
       LOG_FILE: "/tmp/jacred_proxy.log"
       HOST: "0.0.0.0"

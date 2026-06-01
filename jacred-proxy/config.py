@@ -20,6 +20,7 @@ class Settings:
     strip_trailing_year: bool
     merge_v1: bool
     enrich_titles: bool
+    skip_cat_filter: bool
     request_timeout: int
     log_level: str
     log_file: str
@@ -35,6 +36,7 @@ class Settings:
             strip_trailing_year=_env_bool("JACRED_STRIP_YEAR", "false"),
             merge_v1=_env_bool("JACRED_MERGE_V1", "true"),
             enrich_titles=_env_bool("JACRED_ENRICH_TITLES", "true"),
+            skip_cat_filter=_env_bool("JACRED_SKIP_CAT_FILTER", "false"),
             request_timeout=int(os.environ.get("JACRED_TIMEOUT", "20")),
             log_level=os.environ.get("LOG_LEVEL", "INFO").upper(),
             log_file=os.environ.get("LOG_FILE", "/tmp/jacred_proxy.log"),

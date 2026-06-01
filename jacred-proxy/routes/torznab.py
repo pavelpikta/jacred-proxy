@@ -125,8 +125,10 @@ def handle_torznab_request(indexer_id: str = "all") -> Response:
         card_mode=card_mode,
         settings=settings,
     )
-    if is_serial < 0 and cat_param and not card_mode:
+    if is_serial < 0 and cat_param and not card_mode and not settings.skip_cat_filter:
         torrents = filter_results_by_category(torrents, cat_param)
+    elif settings.skip_cat_filter and cat_param and not card_mode:
+        logger.info("[TORZNAB] category filter skipped (JACRED_SKIP_CAT_FILTER)")
     if year and not card_mode:
         torrents = filter_results_by_year(torrents, year)
     if season is not None:

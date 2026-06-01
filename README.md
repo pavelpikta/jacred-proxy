@@ -169,6 +169,7 @@ All settings are read from **environment variables** at startup.
 | `JACRED_MERGE_V1` | `true` | Also query v1 `/api/v1.0/torrents` and merge by infohash |
 | `JACRED_STRIP_YEAR` | `false` | Strip trailing year from free-text `q` before search |
 | `JACRED_ENRICH_TITLES` | `true` | Append voice tags / `[].rus` to Torznab item titles |
+| `JACRED_SKIP_CAT_FILTER` | `false` | Torznab only: skip post-merge `cat=` trimming (max result count) |
 | `HOST` | `0.0.0.0` | Bind address |
 | `PORT` | `5002` | Listen port |
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
