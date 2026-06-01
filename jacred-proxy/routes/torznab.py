@@ -6,6 +6,7 @@ from flask import Blueprint, Response, request
 
 from jacred_proxy.backend.search import search_combined
 from jacred_proxy.categories import filter_results_by_category, is_serial_from_search
+from jacred_proxy.season_filter import filter_results_by_season_episode
 from jacred_proxy.config import get_settings
 from jacred_proxy.formats.torznab_xml import (
     get_caps_xml,
@@ -14,7 +15,11 @@ from jacred_proxy.formats.torznab_xml import (
     wrap_in_xml,
 )
 from jacred_proxy.log import get_logger
-from jacred_proxy.request_params import categories_from_request, is_card_metadata_search
+from jacred_proxy.request_params import (
+    categories_from_request,
+    is_card_metadata_search,
+    season_episode_from_request,
+)
 
 bp = Blueprint("torznab", __name__)
 logger = get_logger()
@@ -59,6 +64,8 @@ def handle_torznab_request(indexer_id: str = "all") -> Response:
     elif cat_param:
         assigned_cat = str(cat_param).split(",")[0].strip()
 
+    season, episode = season_episode_from_request(request)
+
     query = request.args.get("q") or request.args.get("Query")
     title = request.args.get("title")
     title_original = request.args.get("title_original")
@@ -76,12 +83,14 @@ def handle_torznab_request(indexer_id: str = "all") -> Response:
             pass
 
     logger.info(
-        "[TORZNAB] search t=%s q=%r title=%r orig=%r year=%s is_serial=%s cat=%s",
+        "[TORZNAB] search t=%s q=%r title=%r orig=%r year=%s season=%s ep=%s is_serial=%s cat=%s",
         t,
         query,
         title,
         title_original,
         year,
+        season,
+        episode,
         is_serial,
         cat_param or "(none)",
     )
@@ -109,7 +118,9 @@ def handle_torznab_request(indexer_id: str = "all") -> Response:
     )
     if is_serial < 0 and cat_param and not card_mode:
         torrents = filter_results_by_category(torrents, cat_param)
-    logger.info("[TORZNAB] %d results after merge (+cat filter)", len(torrents))
+    if season is not None:
+        torrents = filter_results_by_season_episode(torrents, season, episode)
+    logger.info("[TORZNAB] %d results after merge (+filters)", len(torrents))
 
     xml_items = [
         torrent_to_xml_item(tor, assigned_cat, cat_param=cat_param, settings=settings)

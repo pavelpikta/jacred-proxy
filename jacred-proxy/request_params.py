@@ -22,6 +22,32 @@ def categories_from_request(req: Request) -> list[str] | None:
     return None
 
 
+def season_episode_from_request(req: Request) -> tuple[int | None, int | None]:
+    """Read Torznab ``season`` and ``ep`` (``episode`` alias); ``ep=0`` → season-wide."""
+    season_raw = req.args.get("season")
+    ep_raw = req.args.get("ep")
+    if ep_raw is None:
+        ep_raw = req.args.get("episode")
+
+    season: int | None = None
+    episode: int | None = None
+
+    if season_raw is not None and str(season_raw).strip() != "":
+        try:
+            season = int(season_raw)
+        except (TypeError, ValueError):
+            season = None
+
+    if ep_raw is not None and str(ep_raw).strip() != "":
+        try:
+            ep_val = int(ep_raw)
+            episode = None if ep_val == 0 else ep_val
+        except (TypeError, ValueError):
+            episode = None
+
+    return season, episode
+
+
 def is_card_metadata_search(
     title: str | None,
     title_original: str | None,
