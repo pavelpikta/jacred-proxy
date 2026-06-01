@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jacred-proxy"
+version = "1.0.0"
+description = "Torznab/Jackett proxy for torrent aggregator backends"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "Flask>=2.0",
+    "requests>=2.25",
+]
+
+[project.scripts]
+jacred-proxy = "jacred_proxy.__main__:main"
+
+[project.optional-dependencies]
+production = ["gunicorn>=21.0"]
+
+[tool.setuptools]
+package-dir = { "jacred_proxy" = "jacred-proxy" }
+packages = [
+    "jacred_proxy",
+    "jacred_proxy.backend",
+    "jacred_proxy.formats",
+    "jacred_proxy.routes",
+]
