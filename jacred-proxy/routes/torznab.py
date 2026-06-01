@@ -6,6 +6,7 @@ from flask import Blueprint, Response, request
 
 from jacred_proxy.backend.search import search_combined
 from jacred_proxy.categories import filter_results_by_category, is_serial_from_search
+from jacred_proxy.result_filters import filter_results_by_year, paginate_results
 from jacred_proxy.season_filter import filter_results_by_season_episode
 from jacred_proxy.config import get_settings
 from jacred_proxy.formats.torznab_xml import (
@@ -18,7 +19,7 @@ from jacred_proxy.log import get_logger
 from jacred_proxy.request_params import (
     categories_from_request,
     is_card_metadata_search,
-    season_episode_from_request,
+    torznab_search_params_from_request,
 )
 
 bp = Blueprint("torznab", __name__)
@@ -64,12 +65,19 @@ def handle_torznab_request(indexer_id: str = "all") -> Response:
     elif cat_param:
         assigned_cat = str(cat_param).split(",")[0].strip()
 
-    season, episode = season_episode_from_request(request)
+    tn_params = torznab_search_params_from_request(request)
+    season, episode = tn_params.season, tn_params.episode
 
-    query = request.args.get("q") or request.args.get("Query")
+    query = tn_params.query
     title = request.args.get("title")
     title_original = request.args.get("title_original")
     year = request.args.get("year", type=int)
+    if year is None or year <= 0:
+        year = tn_params.year
+
+    if tn_params.tvdbid_only:
+        logger.warning("[TORZNAB] tvdbid-only search — returning empty")
+        return Response(wrap_in_xml(""), mimetype="application/xml")
 
     if not query and not title and not title_original:
         logger.warning("[TORZNAB] Search without query/title")
@@ -113,13 +121,19 @@ def handle_torznab_request(indexer_id: str = "all") -> Response:
         is_serial=is_serial,
         genres=genres,
         categories=categories,
+        season=season,
         card_mode=card_mode,
         settings=settings,
     )
     if is_serial < 0 and cat_param and not card_mode:
         torrents = filter_results_by_category(torrents, cat_param)
+    if year and not card_mode:
+        torrents = filter_results_by_year(torrents, year)
     if season is not None:
         torrents = filter_results_by_season_episode(torrents, season, episode)
+    torrents = paginate_results(
+        torrents, limit=tn_params.limit, offset=tn_params.offset
+    )
     logger.info("[TORZNAB] %d results after merge (+filters)", len(torrents))
 
     xml_items = [

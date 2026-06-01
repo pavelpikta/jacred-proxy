@@ -1,4 +1,4 @@
-"""Torznab season/episode post-filtering on release titles."""
+"""Torznab season/episode filtering — JacRed ``info.seasons`` first, title regex fallback."""
 
 from __future__ import annotations
 
@@ -44,6 +44,37 @@ class ParsedRelease:
     season: int
     episode: int | None  # None = full-season pack or unknown episode
     is_season_pack: bool
+
+
+def torrent_seasons_set(torrent: dict[str, Any]) -> set[int]:
+    """Structured season numbers from JacRed v2 ``info.seasons`` or v1 ``seasons``."""
+    seasons: set[int] = set()
+
+    def add_values(raw: Any) -> None:
+        if raw is None:
+            return
+        if isinstance(raw, (list, tuple, set)):
+            for item in raw:
+                try:
+                    val = int(item)
+                except (TypeError, ValueError):
+                    continue
+                if val > 0:
+                    seasons.add(val)
+        else:
+            try:
+                val = int(raw)
+            except (TypeError, ValueError):
+                return
+            if val > 0:
+                seasons.add(val)
+
+    add_values(torrent.get("seasons"))
+    info = torrent.get("info")
+    if isinstance(info, dict):
+        add_values(info.get("seasons"))
+
+    return seasons
 
 
 def parse_release_title(title: str) -> ParsedRelease | None:
@@ -119,8 +150,8 @@ def release_matches_season_episode(
     season: int,
     episode: int | None,
 ) -> bool:
-    """Torznab-style match: specific episode (+ season packs) or whole season."""
-    if _episode_in_range(title, season, episode or 0):
+    """Torznab-style match from release title text."""
+    if episode is not None and _episode_in_range(title, season, episode):
         return True
 
     parsed = parse_release_title(title)
@@ -139,23 +170,42 @@ def release_matches_season_episode(
     return parsed.episode == episode
 
 
+def _title_candidates(torrent: dict[str, Any]) -> list[str]:
+    """Primary title plus JacRed normalized names for regex fallback."""
+    titles: list[str] = []
+    primary = safe_get(torrent, "Title", "title", "name")
+    if primary:
+        titles.append(primary)
+    info = torrent.get("info")
+    if isinstance(info, dict):
+        for key in ("name", "originalname"):
+            alt = info.get(key)
+            if alt and str(alt) not in titles:
+                titles.append(str(alt))
+    return titles
+
+
 def torrent_matches_season_episode(
     torrent: dict[str, Any],
     season: int,
     episode: int | None,
 ) -> bool:
-    """Check primary title and optional original name from v1 ``info``."""
-    title = safe_get(torrent, "Title", "title", "name")
-    if release_matches_season_episode(title, season, episode):
-        return True
+    """Match using JacRed ``seasons`` metadata when present, else title regex."""
+    meta = torrent_seasons_set(torrent)
 
-    info = torrent.get("info")
-    if isinstance(info, dict):
-        for key in ("name", "originalname"):
-            alt = info.get(key)
-            if alt and release_matches_season_episode(str(alt), season, episode):
+    if meta:
+        if season not in meta:
+            return False
+        if episode is None:
+            return True
+        for title in _title_candidates(torrent):
+            if release_matches_season_episode(title, season, episode):
                 return True
+        return False
 
+    for title in _title_candidates(torrent):
+        if release_matches_season_episode(title, season, episode):
+            return True
     return False
 
 
@@ -164,8 +214,8 @@ def filter_results_by_season_episode(
     season: int | None,
     episode: int | None,
 ) -> list[dict[str, Any]]:
-    """Narrow results to Torznab ``season`` / ``ep`` when season is set."""
-    if season is None:
+    """Narrow results to Torznab ``season`` / ``ep`` when season is set (>0)."""
+    if season is None or season <= 0:
         return torrents
 
     filtered = [

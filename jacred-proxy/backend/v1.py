@@ -16,6 +16,7 @@ def fetch_v1(
     search: str | None = None,
     altname: str | None = None,
     exact: bool = False,
+    season: int | None = None,
     settings: Settings | None = None,
 ) -> list[dict]:
     """v1 ``/api/v1.0/torrents`` — broader DB key scan; fuzzy unless ``exact``."""
@@ -28,6 +29,8 @@ def fetch_v1(
         params["altname"] = altname
     if exact:
         params["exact"] = "true"
+    if season is not None and season > 0:
+        params["season"] = str(season)
 
     data = get_json("/api/v1.0/torrents", params, "v1", settings)
     if not isinstance(data, dict):

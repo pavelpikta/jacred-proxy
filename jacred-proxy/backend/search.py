@@ -91,6 +91,7 @@ def search_combined(
     is_serial: int = -1,
     genres: str | None = None,
     categories: list[str] | None = None,
+    season: int | None = None,
     merge_v1: bool | None = None,
     card_mode: bool | None = None,
     settings: Settings | None = None,
@@ -150,6 +151,7 @@ def search_combined(
                     search=search,
                     altname=altname,
                     exact=False,
+                    season=season,
                     settings=settings,
                 )
             )

@@ -121,5 +121,7 @@ def v1_item_to_result(item: dict[str, Any]) -> dict[str, Any]:
             "originalname": item.get("originalname"),
             "voices": item.get("voices"),
             "types": item.get("types"),
+            "seasons": item.get("seasons"),
+            "relased": item.get("relased"),
         },
     }

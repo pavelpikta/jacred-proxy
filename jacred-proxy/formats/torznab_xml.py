@@ -42,9 +42,9 @@ def get_caps_xml() -> str:
   <server version="1.0" title="JacRed Proxy" strapline="Torznab wrapper for JacRed" email="info@localhost" url="{escape(base)}/api/v2.0/indexers/all/results/torznab/api"/>
   <limits max="1000" default="100"/>
   <searching>
-    <search available="yes" supportedParams="q"/>
-    <tv-search available="yes" supportedParams="q,season,ep"/>
-    <movie-search available="yes" supportedParams="q"/>
+    <search available="yes" supportedParams="q,imdbid"/>
+    <tv-search available="yes" supportedParams="q,imdbid,tvdbid,season,ep"/>
+    <movie-search available="yes" supportedParams="q,imdbid"/>
   </searching>
   <categories>
     <category id="2000" name="Movies"/>
